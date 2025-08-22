@@ -9,13 +9,8 @@ chapter = "chapter1_transformer_interp"
 repo = "ARENA_3.0"
 branch = "main"
 
-# Install dependencies
-try:
-    import transformer_lens
-except:
-    """
-    %pip install transformer_lens==2.11.0 einops jaxtyping git+https://github.com/callummcdougall/CircuitsVis.git#subdirectory=python
-    """
+import transformer_lens
+
 
 # Get root directory, handling 3 different cases: (1) Colab, (2) notebook not in ARENA repo, (3) notebook in ARENA repo
 root = (
@@ -88,100 +83,6 @@ from plotly_utils import imshow
 MAIN = __name__ == "__main__"
 
 # %% [markdown]
-# # 1️⃣ Understanding Inputs & Outputs of a Transformer
-# 
-# > ##### Learning Objectives
-# >
-# > - Understand what a transformer is used for
-# > - Understand causal attention, and what a transformer's output represents—algebra operations on tensors
-# > - Learn what tokenization is, and how models do it
-# > - Understand what logits are, and how to use them to derive a probability distribution over the vocabulary
-
-# %% [markdown]
-# ## What is the point of a transformer?
-
-# %% [markdown]
-# **Transformers exist to model text!**
-# 
-# We're going to focus GPT-2 style transformers. Key feature: They generate text! You feed in language, and the model generates a probability distribution over tokens. And you can repeatedly sample from this to generate text!
-# 
-# (To explain this in more detail - you feed in a sequence of length $N$, then sample from the probability distribution over the $N+1$-th word, use this to construct a new sequence of length $N+1$, then feed this new sequence into the model to get a probability distribution over the $N+2$-th word, and so on.)
-# 
-# ### How is the model trained?
-# 
-# You give it a bunch of text, and train it to predict the next token.
-# 
-# Importantly, if you give a model 100 tokens in a sequence, it predicts the next token for *each* prefix, i.e. it produces 100 logit vectors (= probability distributions) over the set of all words in our vocabulary, with the `i`-th logit vector representing the probability distribution over the token *following* the `i`-th token in the sequence. This is a key part of what allows transformers to be trained so efficiently; for every sequence of length $n$ we get $n$ different predictions to train on:
-# 
-# $$
-# p(x_1), \; p(x_2|x_1), \; p(x_3|x_1x_2), \; \ldots, \; p(x_n|x_1 \ldots x_{n-1})
-# $$
-# 
-# <details>
-# <summary>Aside - logits</summary>
-# 
-# If you haven't encountered the term "logits" before, here's a quick refresher.
-# 
-# Given an arbitrary vector $x$, we can turn it into a probability distribution via the **softmax** function: $x_i \to \frac{e^{x_i}}{\sum e^{x_j}}$. The exponential makes everything positive; the normalization makes it add to one.
-# 
-# The model's output is the vector $x$ (one for each prediction it makes). We call this vector a logit because it represents a probability distribution, and it is related to the actual probabilities via the softmax function.
-# </details>
-# 
-# How do we stop the transformer by "cheating" by just looking at the tokens it's trying to predict? Answer - we make the transformer have *causal attention* (as opposed to *bidirectional attention*). Causal attention only allows information to move forwards in the sequence, never backwards. The prediction of what comes after token 50 is only a function of the first 50 tokens, *not* of token 51. We say the transformer is **autoregressive**, because it only predicts future words based on past data.
-
-# %% [markdown]
-# <img src="https://raw.githubusercontent.com/info-arena/ARENA_img/main/misc/transformer-overview-new.png" width="900">
-
-# %% [markdown]
-# Another way to view this is through the following analogy: we have a series of people standing in a line, each with one word or chunk of the sentence. Each person has the ability to look up information from the people behind them (we'll explore how this works in later sections) but they can't look at any information in front of them. Their goal is to guess what word the person in front of them is holding.
-# 
-# <img src="https://raw.githubusercontent.com/info-arena/ARENA_img/main/misc/intro-image-v2.png" width="600">
-
-# %% [markdown]
-# ## Tokens - Transformer Inputs
-
-# %% [markdown]
-# Our tranformer's input is natural language (i.e. a sequence of characters, strings, etc). But ML models generally take vectors as input, not language. How do we convert language to vectors?
-# 
-# We can factor this into 2 questions:
-# 
-# 1. How do we split up language into small sub-units?
-# 2. How do we convert these sub-units into vectors?
-# 
-# Let's start with the second of these questions.
-
-# %% [markdown]
-# ### Converting sub-units to vectors
-# 
-# We basically make a massive lookup table, which is called an **embedding**. It has one vector for each possible sub-unit of language we might get (we call this set of all sub-units our **vocabulary**). We label every element in our vocabulary with an integer (this labelling never changes), and we use this integer to index into the embedding.
-# 
-# A key intuition is that one-hot encodings let you think about each integer independently. We don't bake in any relation between words when we perform our embedding, because every word has a completely separate embedding vector.
-# 
-# <details>
-# <summary>Aside - one-hot encodings</summary>
-# 
-# We sometimes think about **one-hot encodings** of words. These are vectors with zeros everywhere, except for a single one in the position corresponding to the word's index in the vocabulary. This means that indexing into the embedding is equivalent to multiplying the **embedding matrix** by the one-hot encoding (where the embedding matrix is the matrix we get by stacking all the embedding vectors on top of each other).
-# 
-# $$
-# \begin{aligned}
-# W_E &= \begin{bmatrix}
-# \leftarrow v_0 \rightarrow \\
-# \leftarrow v_1 \rightarrow \\
-# \vdots \\
-# \leftarrow v_{d_{vocab}-1} \rightarrow \\
-# \end{bmatrix} \quad \text{is the embedding matrix (size }d_{vocab} \times d_{embed}\text{),} \\
-# \\
-# t_i &= (0, \dots, 0, 1, 0, \dots, 0) \quad \text{is the one-hot encoding for the }i\text{th word (length }d_{vocab}\text{)} \\
-# \\
-# v_i &= t_i W_E \quad \text{is the embedding vector for the }i\text{th word (length }d_{embed}\text{).} \\
-# \end{aligned}
-# $$
-# 
-# </details>
-# 
-# Now, let's answer the first question - how do we split language into sub-units?
-
-# %% [markdown]
 # ### Splitting language into sub-units
 # 
 # We need to define a standard way of splitting up language into a series of substrings, where each substring is a member of our **vocabulary** set.
@@ -213,18 +114,7 @@ reference_gpt2 = HookedTransformer.from_pretrained(
     center_unembed=False,
     center_writing_weights=False,  # you'll learn about these arguments later!
 )
-#%%
-print(reference_gpt2.cfg.d_head)
-print(reference_gpt2.cfg.d_model)
-print(reference_gpt2.cfg.act_fn)
-print(reference_gpt2.cfg.n_heads)
-print(reference_gpt2.cfg.n_layers)
 
-
-print(reference_gpt2.W_E.shape)
-print(reference_gpt2.W_Q.shape)
-print(reference_gpt2.W_K.shape)
-print(reference_gpt2.W_V.shape)
 #%%
 
 sorted_vocab = sorted(list(reference_gpt2.tokenizer.vocab.items()), key=lambda n: n[1])
@@ -257,6 +147,14 @@ print(sorted_vocab[-20:])
 #     print(f"{length}: {tok}")
 # ```
 # </details>
+#%%
+lengths = dict.fromkeys(range(3, 8), "")
+for tok, idx in sorted_vocab:
+    if not lengths.get(len(tok), True):
+        lengths[len(tok)] = tok
+for length, tok in lengths.items():
+    print(f"{length}: {tok}")
+
 
 # %% [markdown]
 # Transformers in the `transformer_lens` library have a `to_tokens` method that converts text to numbers. It also prepends them with a special token called BOS (beginning of sequence) to indicate the start of a sequence. You can disable this with the `prepend_bos=False` argument.
