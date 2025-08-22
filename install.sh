@@ -1,15 +1,17 @@
-# Install Miniconda
-mkdir -p ~/miniconda3
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-rm -rf ~/miniconda3/miniconda.sh
-~/miniconda3/bin/conda init bash
+# Install Miniconda to home directory
+MINICONDA_DIR="$HOME/miniconda3"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+mkdir -p "$MINICONDA_DIR"
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O "$MINICONDA_DIR/miniconda.sh"
+bash "$MINICONDA_DIR/miniconda.sh" -b -u -p "$MINICONDA_DIR"
+rm -rf "$MINICONDA_DIR/miniconda.sh"
+"$MINICONDA_DIR/bin/conda" init bash
 source ~/.bashrc
 # Accept Anaconda Terms of Service for required channels
-~/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
-~/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+"$MINICONDA_DIR/bin/conda" tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+"$MINICONDA_DIR/bin/conda" tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 # Create & activate the Conda environment
-~/miniconda3/bin/conda create -n arena-env python=3.11 -y
-source ~/miniconda3/bin/activate arena-env
-~/miniconda3/envs/arena-env/bin/pip install -r ~/ARENA_3.0/requirements.txt 
-~/miniconda3/bin/conda install -n arena-env ipykernel --update-deps --force-reinstall -y
+"$MINICONDA_DIR/bin/conda" create -n arena-env python=3.11 -y
+source "$MINICONDA_DIR/bin/activate" arena-env
+"$MINICONDA_DIR/envs/arena-env/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
+"$MINICONDA_DIR/bin/conda" install -n arena-env ipykernel --update-deps --force-reinstall -y
