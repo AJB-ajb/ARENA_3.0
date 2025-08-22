@@ -5,9 +5,11 @@ bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
 rm -rf ~/miniconda3/miniconda.sh
 ~/miniconda3/bin/conda init bash
 source ~/.bashrc
-
+# Accept Anaconda Terms of Service for required channels
+~/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+~/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 # Create & activate the Conda environment
 ~/miniconda3/bin/conda create -n arena-env python=3.11 -y
-~/miniconda3/bin/conda activate arena-env
+source ~/miniconda3/bin/activate arena-env
 ~/miniconda3/envs/arena-env/bin/pip install -r ~/ARENA_3.0/requirements.txt 
 ~/miniconda3/bin/conda install -n arena-env ipykernel --update-deps --force-reinstall -y
