@@ -4,3 +4,35 @@ line-length = 100
 [tool.ruff.lint]
 ignore = ["E722", "E731", "F722", "E402", "E741"]
 extend-select = ["I"]
+
+[project]
+name = "arena-3-0"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Your Name",email = "you@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+]
+
+[tool.poetry]
+packages = [{include = "arena_3"}]
+
+[tool.poetry.group.circuits]
+optional = true
+
+[tool.poetry.group.circuits.dependencies]
+# Circuits and SAE packages moved to their own optional group because they have
+# heavy / conflicting dependencies (numpy/opencv/safetensors) that can
+# destabilize the main dependency resolution.
+# circuitsvis = {git = "https://github.com/callummcdougall/CircuitsVis.git", subdirectory = "python"}
+# sae-lens and sae-vis intentionally omitted here to avoid blocking the main
+# dependency resolution; add them later into the `circuits` group when needed:
+#   poetry add --group circuits "sae-lens>=4.0.0,<5.0.0" "sae-vis>=0.3.1"
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
